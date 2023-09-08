@@ -242,9 +242,7 @@ class BingAI:
         if self.callback is not None:
             await ut.remove_button(self.update, self.callback)
         if not self.inline:
-            self.edit = await ut.send(
-                self.update, f"<b>You</b>: {html.escape(self.text)}"
-            )
+            self.edit = await ut.send(self.update, f"Đang trả lời...")
             turn = str(uuid4())[:8]
             ut.RUN[self.cid][self.conv_id].append(turn)
             while turn != ut.RUN[self.cid][self.conv_id][0]:
@@ -272,10 +270,7 @@ class BingAI:
                 resp = REF_ST.sub("", resp)
                 resp = resp.strip()
                 if resp:
-                    text = (
-                        f"<b>You</b>: {html.escape(self.text)}\n\n"
-                        f"<b>Bing</b>: {html.escape(resp)}"
-                    )
+                    text = (f"{html.escape(resp)}")
                     if len(text) < CHAT_LIMIT:
                         if not self.inline:
                             await ut.edit(self.edit, text)
@@ -353,9 +348,7 @@ class BingAI:
 
     def add_throttling(self, text: str) -> str:
         return (
-            f"{text}\n\n<code>Message: "
-            f"{self.user_msg}/{self.user_msg_max}</code>\n"
-            f"<code>Conversation ID: {self.conv_id}</code>\n"
+            f"{text}"
         )
 
     async def parse_message(self, message: Dict[str, Any]) -> None:
@@ -376,7 +369,7 @@ class BingAI:
             text = REF.sub(
                 partial(ut.generate_link, references=references), text
             )
-        text = f"<b>Bing</b>: {text}"
+        text = f"{text}"
         tts = False
         if db.tts(self.cid) == 1:
             tts = True
@@ -404,12 +397,12 @@ class BingAI:
                 bt_lst.insert(
                     idx, ut.button([(sug["text"], f"response_{idx}")])
                 )
-        suggestions = ut.markup(bt_lst)
+        #suggestions = ut.markup(bt_lst)
         question = f"<b>You</b>: {html.escape(self.text)}\n\n"
-        msg = self.add_throttling(f"{question}{text}{extra}")
+        msg = self.add_throttling(f"{text}")
         if len(msg) < CHAT_LIMIT:
             if not self.inline:
-                await ut.edit(self.edit, msg, reply_markup=suggestions)
+                await ut.edit(self.edit, msg)
             else:
                 await ut.edit_inline(self.update, self.context, msg)
         else:
@@ -421,7 +414,7 @@ class BingAI:
                         f"<code>Sending full response as markdown "
                         f"file...</code>"
                     ),
-                    reply_markup=suggestions,
+                    #reply_markup=suggestions,
                 )
                 await self.update.effective_message.reply_document(
                     io.BytesIO(self.message_md.encode()),
@@ -454,7 +447,6 @@ class BingAI:
                     media = [InputMediaPhoto(img) for img in images]
                     await self.update.effective_message.reply_media_group(
                         media,
-                        caption=f"<b>You</b>: {self.text}",
                         parse_mode=ParseMode.HTML,
                     )
                 else:
